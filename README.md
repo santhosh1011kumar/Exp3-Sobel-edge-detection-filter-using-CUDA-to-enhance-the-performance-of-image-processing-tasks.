@@ -1,9 +1,9 @@
 # Exp3-Sobel-edge-detection-filter-using-CUDA-to-enhance-the-performance-of-image-processing-tasks.
 <h3>AIM:</h3>
-<h3>ENTER YOUR NAME</h3>
-<h3>ENTER YOUR REGISTER NO</h3>
-<h3>EX. NO</h3>
-<h3>DATE</h3>
+<h3> NAME : SANTHOSH KUMAR A</h3>
+<h3> REGISTER NO : 212224230250</h3>
+<h3>EX.NO 3 </h3>
+<h3>DATE : 23-11-2026</h3>
 <h1> <align=center> Sobel edge detection filter using CUDA </h3>
   Implement Sobel edge detection filtern using GPU.</h3>
 Experiment Details:
@@ -36,13 +36,122 @@ Compare the output of your CUDA Sobel filter with a CPU-based Sobel filter imple
 Discuss the differences in execution time and output quality.
 
 ## PROGRAM:
-TYPE YOUR CODE HERE
+```
+%%writefile sobelEdgeDetectionFilter.cu
+#include<stdio.h>
+#include<stdlib.h>
+#include<math.h>
+#include <opencv2/opencv.hpp>
+#include <cuda_runtime.h>
+
+using namespace cv;
+
+__global__ void sobelFilter(unsigned char *srcImage, unsigned char *dstImage, unsigned int width, unsigned int height) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    
+    float Kx[3][3] = { {-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1} };
+    float Ky[3][3] = { {1, 2, 1}, {0, 0, 0}, {-1, -2, -1} };
+    
+    if ((x >= 1) && (x < (width - 1)) && (y >= 1) && (y < (height - 1))) {
+        float Gx = 0;
+        for (int ky = -1; ky <= 1; ky++) {
+            for (int kx = -1; kx <= 1; kx++) {
+                float fl = srcImage[((y + ky) * width + (x + kx))];
+                Gx += fl * Kx[ky + 1][kx + 1];
+            }
+        }
+        float Gx_abs = Gx < 0 ? -Gx : Gx;
+        
+        float Gy = 0;
+        for (int ky = -1; ky <= 1; ky++) {
+            for (int kx = -1; kx <= 1; kx++) {
+                float fl = srcImage[((y + ky) * width + (x + kx))];
+                Gy += fl * Ky[ky + 1][kx + 1];
+            }
+        }
+        float Gy_abs = Gy < 0 ? -Gy : Gy;
+        
+        dstImage[(y * width + x)] = (unsigned char)fminf(Gx_abs + Gy_abs, 255.0f);
+    }
+}
+
+void checkCudaErrors(cudaError_t r) {
+    if (r != cudaSuccess) {
+        fprintf(stderr, "CUDA Error: %s\n", cudaGetErrorString(r));
+        exit(EXIT_FAILURE);
+    }
+}
+
+int main() {
+    Mat image = imread("/content/images.jpg", IMREAD_GRAYSCALE);
+
+    if (image.empty()) {
+        printf("Error: Image not found.\n");
+        return -1;
+    }
+
+    int width = image.cols;
+    int height = image.rows;
+    size_t imageSize = width * height * sizeof(unsigned char);
+
+    unsigned char *h_outputImage = (unsigned char *)malloc(imageSize);
+    if (h_outputImage == nullptr) {
+        fprintf(stderr, "Failed to allocate host memory\n");
+        return -1;
+    }
+
+    unsigned char *d_inputImage, *d_outputImage;
+    checkCudaErrors(cudaMalloc(&d_inputImage, imageSize));
+    checkCudaErrors(cudaMalloc(&d_outputImage, imageSize));
+    checkCudaErrors(cudaMemcpy(d_inputImage, image.data, imageSize, cudaMemcpyHostToDevice));
+
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    dim3 blockSize(16, 16);
+    dim3 gridSize((width + 15) / 16, (height + 15) / 16);
+
+    cudaEventRecord(start);
+    sobelFilter<<<gridSize, blockSize>>>(d_inputImage, d_outputImage, width, height);
+    cudaEventRecord(stop);
+
+    cudaEventSynchronize(stop);
+
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
+
+    checkCudaErrors(cudaMemcpy(h_outputImage, d_outputImage, imageSize, cudaMemcpyDeviceToHost));
+
+    Mat outputImage(height, width, CV_8UC1, h_outputImage);
+    imwrite("/content/output_sobel.jpg", outputImage);
+
+    free(h_outputImage);
+    cudaFree(d_inputImage);
+    cudaFree(d_outputImage);
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+
+    printf("Total time taken: %f milliseconds\n", milliseconds);
+    return 0;
+}
+```
 
 ## OUTPUT:
-SHOW YOUR OUTPUT HERE
+### ORIGINAL IMAGE :
+<img width="643" height="495" alt="images" src="https://github.com/user-attachments/assets/a9ebe2d1-ae35-4aea-a359-f82fc0da372c" />
+
+
+### SOBELFILTER IMAGE :
+
+<img width="643" height="522" alt="image" src="https://github.com/user-attachments/assets/986bae02-e0c7-46cf-a62e-6fd4837e6f34" />
+
+
 
 ## RESULT:
-Thus the program has been executed by using CUDA to ________________.
+Thus the program has been executed by using CUDA to perform 2D Sobel edge detection on an image using parallel GPU computing and analyze its execution time.
+Total time taken: 0.145312 milliseconds
 
 Questions:
 
