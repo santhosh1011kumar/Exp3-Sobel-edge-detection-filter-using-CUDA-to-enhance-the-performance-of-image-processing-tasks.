@@ -153,17 +153,4 @@ int main() {
 Thus the program has been executed by using CUDA to perform 2D Sobel edge detection on an image using parallel GPU computing and analyze its execution time.
 Total time taken: 0.145312 milliseconds
 
-Questions:
-
-What challenges did you face while implementing the Sobel filter for color images?
-How did changing the block size influence the performance of your CUDA implementation?
-What were the differences in output between the CUDA and CPU implementations? Discuss any discrepancies.
-Suggest potential optimizations for improving the performance of the Sobel filter.
-
-Deliverables:
-
-Modified CUDA code with comments explaining your changes.
-A report summarizing your findings, including graphs of execution times and a comparison of outputs.
-Answers to the questions posed in the experiment.
-Tools Required:
 
